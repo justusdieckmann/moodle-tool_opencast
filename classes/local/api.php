@@ -33,15 +33,34 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->dirroot . '/lib/filelib.php');
 
+/**
+ * API for opencast
+ *
+ * @package    tool_opencast
+ * @copyright  2018 Tobias Reischmann <tobias.reischmann@wi.uni-muenster.de>
+ * @copyright  2017 Andreas Wagner, SYNERGY LEARNING
+ * @author     Andreas Wagner
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class api extends \curl {
 
+    /** @var string the api username */
     private $username;
+    /** @var string the api password */
     private $password;
+    /** @var int the curl timeout in seconds */
     private $timeout;
+    /** @var string the api baseurl */
     private $baseurl;
 
+    /** @var array array of supported api levels */
     private static $supportedapilevel;
 
+    /**
+     * Returns the sortparam string
+     * @param array $params
+     * @return string
+     */
     public static function get_sort_param($params) {
 
         if (empty($params)) {
@@ -54,26 +73,54 @@ class api extends \curl {
         }
     }
 
+    /**
+     * Returns the COURSE_ACL_ROLE-prfix
+     * @return string
+     */
     public static function get_course_acl_role_prefix() {
         return "ROLE_GROUP_MOODLE_COURSE_";
     }
 
+    /**
+     * Returns the course ACL role for the given course
+     * @param int $courseid the courseid
+     * @return string the acl role
+     */
     public static function get_course_acl_role($courseid) {
         return  self::get_course_acl_role_prefix(). $courseid;
     }
 
+    /**
+     * Returns the course ACL group identifier for the given course
+     * @param int $courseid the courseid
+     * @return string the course ACL group identifier
+     */
     public static function get_course_acl_group_identifier($courseid) {
         return "moodle_course_" . $courseid;
     }
 
+    /**
+     * Returns the course ACL group name for the given course
+     * @param int $courseid the course id
+     * @return string the course ACL group name
+     */
     public static function get_course_acl_group_name($courseid) {
         return "Moodle_Course_" . $courseid;
     }
 
+    /**
+     * Returns the course series title prefix
+     * @return string the course series title prefix
+     */
     public static function get_courses_series_title_prefix() {
         return "Course_Series_";
     }
 
+    /**
+     * Returns the course series title for a given course
+     * @param int $courseid the courseid
+     * @return string the course series title
+     */
     public static function get_courses_series_title($courseid) {
         return self::get_courses_series_title_prefix() . $courseid;
     }
@@ -128,24 +175,24 @@ class api extends \curl {
      */
     private function get_authentication_header($runwithroles = array()) {
 
-            $options = array('CURLOPT_HEADER' => true);
-            $this->setopt($options);
+        $options = array('CURLOPT_HEADER' => true);
+        $this->setopt($options);
 
-            // Restrict to Roles.
-            if (!empty($runwithroles)) {
-                $header[] = "X-RUN-WITH-ROLES: " . implode(', ', $runwithroles);
-                $this->setHeader($header);
-            }
+        // Restrict to Roles.
+        if (!empty($runwithroles)) {
+            $header[] = "X-RUN-WITH-ROLES: " . implode(', ', $runwithroles);
+            $this->setHeader($header);
+        }
 
-            $this->setopt('CURLOPT_CONNECTTIMEOUT', $this->timeout);
+        $this->setopt('CURLOPT_CONNECTTIMEOUT', $this->timeout);
 
-            $basicauth = base64_encode($this->username . ":" . $this->password);
+        $basicauth = base64_encode($this->username . ":" . $this->password);
 
-            $header = array();
+        $header = array();
 
-            $header[] = sprintf(
+        $header[] = sprintf(
                 'Authorization: Basic %s', $basicauth
-            );
+        );
 
         return $header;
     }
@@ -188,7 +235,7 @@ class api extends \curl {
             throw new \moodle_exception('needphp55orhigher', 'tool_opencast');
         }
 
-        //Extracting filename from $file->file_record->source, make sure to have a string filename!
+        // Extracting filename from $file->file_record->source, make sure to have a string filename!
         $source = @unserialize($storedfile->get_source());
         $filename = '';
         if (is_object($source)) {
@@ -287,7 +334,7 @@ class api extends \curl {
                 if ($value instanceof \stored_file) {
                     $value->add_to_curl_request($this, $key);
                     $this->add_postname($value, $key);
-                } elseif (class_exists('\local_chunkupload\local\chunkupload_file') &&
+                } else if (class_exists('\local_chunkupload\local\chunkupload_file') &&
                     $value instanceof \local_chunkupload\local\chunkupload_file) {
                         $value->add_to_curl_request($this, $key);
                         $this->add_postname_chunkupload($value, $key);
@@ -375,8 +422,8 @@ class api extends \curl {
     /**
      * Checks if the opencast version support a certain version of the External API.
      * This is necessary for the decision, which opencast endpoints are used throughout this class.
+     * @param string $level level to check for
      * @return string|null returns the version as string.
-     * @throws \dml_exception
      * @throws \moodle_exception
      */
     public function supports_api_level($level) {
