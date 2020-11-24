@@ -82,7 +82,9 @@ after_success:
 
 stages:
   - static
-  #- name: develop
-  #  if: branch != master AND (type != pull_request OR head_branch != master) AND (tag IS blank)
-  #- name: test
-  #  if: branch = master OR (type = pull_request AND head_branch = master) OR (tag IS present)
+  - name: develop
+    if: false
+    #if: branch != master AND (type != pull_request OR head_branch != master) AND (tag IS blank)
+  - name: test
+    if: false
+    #if: branch = master OR (type = pull_request AND head_branch = master) OR (tag IS present)
